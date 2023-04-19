@@ -2,73 +2,88 @@ import mesa
 import numpy as np
 
 from .target import Target
+from .steering import boids, avoid_edges, seek_target
 
 class Drone(mesa.Agent):
     
-    def __init__(self, unique_id, model, initial_state, diameter, vis_range, weapon_range):
+    def __init__(self, unique_id, model, diameter, vis_range, weapon_range):
         """
         Initializes a drone agent.
         """
         super().__init__(unique_id, model)
-        self.diameter     = diameter  # Each drone is assumed to be a circle of a given diameter (meters)
-        self.state        = initial_state
-        self.vis_range    = vis_range
-        self.weapon_range = weapon_range
-        self.max_velocity = 1  # meters / second
+        self.diameter         = diameter  # Each drone is assumed to be a circle of a given diameter (meters)
+        self.vis_range        = vis_range
+        self.weapon_range     = weapon_range
+        self.max_velocity     = 50  # meters / second
+        self.max_acceleration = 50  # m / s^2
         
-        self.search_direction = None  # Will be removed later. For now, stores search direction
-        self.search_duration  = 0     # Another hacky, temporary variable. Used to store length of time drone has been searching
+        # Initialize kinematic parameters
+        self.velocity     = (np.random.rand(2) - .5) * self.max_velocity
+        self.acceleration = np.random.rand(2) - .5  
     
-    def determine_goal_position(self):
+    def update_position(self):
+        # Move the drone
+        self.model.domain.place_agent(
+            self,
+            tuple(
+                np.array(self.pos) + self.model.dt * self.velocity
+            )
+        )
+        return
         
-        # For now, move randomly at full speed if the drones are in the search state
-        if self.state == self.model.DRONE_STATES[0]:
-            
-            # Change direction every minute
-            if self.search_duration % 60 == 0:
-                self.search_direction = np.random.uniform(0, 2 * np.pi)
-                
-            direction  = np.array([ np.cos(self.search_direction), np.sin(self.search_direction) ])
-            self_pos   = np.array(self.pos)
-            position   = tuple( self_pos + direction * self.max_velocity * self.model.dt )
-            
-            # Increment search_duration. REMOVE LATER
-            self.search_duration += 1
-            return position
+    def update_acceleration(self):
+        # Calculate boids steering/acceleration vectors
+        alignment_steering, cohesion_steering, separation_steering = boids(self)
+        edge_avoidance_steering = avoid_edges(self)
+        target_seeking_steering = seek_target(self)
         
-        # For now, move directly towards target at full speed if drones are in attack state
-        if self.state == self.model.DRONE_STATES[1]:
-            target_id  = self.model.target_id
-            target_pos = np.array(self.model.schedule.agents[target_id].pos)
-            self_pos   = np.array(self.pos)
-            direction  = target_pos - self_pos
-            direction /= np.linalg.norm(direction)
-            position   = tuple( self_pos + direction * self.max_velocity * self.model.dt )
-            return position
+        # Calculate total steering/acceleration vector
+        weights  = np.array([ 
+            1,   # alignment weight
+            .95,  # cohesion weight
+            1.05,  # separation weight
+            1,  # edge avoidance weight
+            1,  # target seeking weight
+        ])
         
-    def target_in_range(self):
-        neighbors = self.model.domain.get_neighbors(
-            self.pos,
-            self.vis_range,
-            include_center=False
+        self.acceleration = (
+            1
+            /
+            weights.sum()
+            *
+            (
+                weights[0] * alignment_steering 
+                + 
+                weights[1] * cohesion_steering 
+                + 
+                weights[2] * separation_steering
+                +
+                weights[3] * edge_avoidance_steering
+                +
+                weights[4] * target_seeking_steering
+            )
         )
         
-        if any( [isinstance(neighbor, Target) for neighbor in neighbors] ):
-            return True
+        # Clamp acceleration
+        if np.linalg.norm(self.acceleration) > self.max_acceleration:
+            self.acceleration *= self.max_acceleration / np.linalg.norm(self.acceleration)
+        return
+    
+    def update_velocity(self):
+        # Update velocity according to v_i = v_(i-1) + a * dt
+        self.velocity += self.acceleration * self.model.dt
         
-        return False
+        # Clamp velocity
+        if np.linalg.norm(self.velocity) > self.max_velocity:
+            self.velocity *= self.max_velocity / np.linalg.norm(self.velocity)
+        return
     
     def step(self):
         """
         Describes drone behavior with each schedule.step()
         """
+        self.update_position()
+        self.update_acceleration()
+        self.update_velocity()
         
-        goal_position = self.determine_goal_position()  # Determine goal position
-        self.model.domain.move_agent(self, goal_position)  # Move agent to goal position
         
-        # If target is in range, 
-        if self.target_in_range():
-            for agent in self.model.schedule.agents:
-                if isinstance(agent, Target): continue  # Don't modify target state
-                
-                agent.state = self.model.DRONE_STATES[1]  # Set drone states to attack

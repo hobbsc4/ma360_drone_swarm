@@ -11,7 +11,7 @@ class SwarmModel(mesa.Model):
     
     def __init__(
         self, 
-        n_drones: int, 
+        n_drones: int,
         domain_width: float, 
         domain_height: float, 
         drone_diameter: float, 
@@ -50,8 +50,6 @@ class SwarmModel(mesa.Model):
                 and size of drones.
                 """)
         
-        self.DRONE_STATES   = ["searching", "attacking", "retreating"]
-        self.TARGET_STATES  = ["idle", "defending"]
         self.DRONE_DIAMETER = drone_diameter
         self.N_DRONES       = n_drones
         
@@ -84,7 +82,6 @@ class SwarmModel(mesa.Model):
             drone = Drone(
                 self.current_id,
                 self,
-                self.DRONE_STATES[0], 
                 self.DRONE_DIAMETER, 
                 self.drone_vis_radius, 
                 self.drone_weapon_radius)  # Initialize each drone
@@ -101,7 +98,7 @@ class SwarmModel(mesa.Model):
         # Initialize target
         self.target_id = self.current_id  # Store target ID for use later
         
-        target = Target(self.target_id, self, self.TARGET_STATES[0], self.target_vis_radius)
+        target = Target(self.target_id, self, self.target_vis_radius)
         self.schedule.add(target)
         self.current_id += 1 # Increment current_id
         
