@@ -16,11 +16,13 @@ def seek_target(drone):
     desired_velocity = np.zeros(2)
     
     # Accessing the target this way is faster than with a for loop
-    target = drone.model.schedule.agents[drone.model.target_id]
+    target = drone.model.target
     
     # If the target is out of range, don't steer towards/away from it
-    if np.linalg.norm(np.array(target.pos) - np.array(drone.pos)) > drone.vis_range:
+    distance = np.linalg.norm(np.array(target.pos) - np.array(drone.pos))
+    if distance > drone.vis_range:
         return steering
+    
     
     direction = np.array(target.pos) - np.array(drone.pos)
     

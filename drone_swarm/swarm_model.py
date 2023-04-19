@@ -10,8 +10,8 @@ class SwarmModel(mesa.Model):
 
     Attributes
     ----------
-    N_DRONES : int
-        The number of drones in the swarm.
+    initial_n_drones : int
+        The number of drones initially in the swarm.
     DRONE_DIAMETER : float
         The diameter of each drone, in meters.
     target_vis_radius : float
@@ -44,10 +44,17 @@ class SwarmModel(mesa.Model):
         n_drones: int,
         domain_width: float, 
         domain_height: float, 
-        drone_diameter: float, 
         target_vis_radius: float,
+        target_weapon_range: float,
         drone_vis_radius: float,
-        drone_weapon_radius: float
+        drone_weapon_radius: float,
+        drone_max_accuracy: float,
+        drone_max_velocity: float,
+        drone_max_acceleration: float,
+        weapon_angular_range: float,
+        fire_cooldown: float,
+        omega_max: float,
+        dt: float
     ):
         """
         Initializes the swarm model with the specified parameters.
@@ -75,24 +82,26 @@ class SwarmModel(mesa.Model):
             If the simulation domain is too small for the number and size of the drones.
         """
         
-        # There is almost certainly a better way to do this. However this is meant to ensure that 
-        # the domain is of a reasonable size for the number and size of drones specified
-        if domain_width / n_drones < drone_diameter or domain_height / n_drones < drone_diameter:
-            raise ValueError(
-                f"""
-                Domain is too small. Must be at least {drone_diameter * n_drones} by {drone_diameter * n_drones} for the specified number
-                and size of drones.
-                """)
+        self.running = True
         
-        self.DRONE_DIAMETER = drone_diameter
-        self.N_DRONES       = n_drones
+        self.initial_n_drones = n_drones
         
         self.target_vis_radius   = target_vis_radius
+        self.target_weapon_range = target_weapon_range
         self.drone_vis_radius    = drone_vis_radius
         self.drone_weapon_radius = drone_weapon_radius
+        self.drone_max_accuracy  = drone_max_accuracy
+        self.drone_max_velocity  = drone_max_velocity
+        self.drone_max_acceleration = drone_max_acceleration
+        
+        self.weapon_angular_range = weapon_angular_range
+        self.fire_cooldown        = fire_cooldown
+        self.omega_max            = omega_max
+        
+        self.n_drones_returned = 0  # counts how many drones have made it back to the boundary after firing
         
         # Amount of time each time step represents
-        self.dt = 1 # second
+        self.dt = dt # second
         
         # Next available unique id for an agent
         self.current_id = 0
@@ -112,13 +121,15 @@ class SwarmModel(mesa.Model):
                          # it is not realistic.
         )
         
-        for _ in range(self.N_DRONES):
+        for _ in range(self.initial_n_drones):
             drone = Drone(
                 self.current_id,
                 self,
-                self.DRONE_DIAMETER, 
                 self.drone_vis_radius, 
-                self.drone_weapon_radius)  # Initialize each drone
+                self.drone_weapon_radius,
+                self.drone_max_accuracy,
+                self.drone_max_velocity,
+                self.drone_max_acceleration)  # Initialize each drone
             
             self.current_id += 1 #  Increment current_id
             
@@ -129,12 +140,12 @@ class SwarmModel(mesa.Model):
             y = self.random.randrange(self.domain.height * 3/4, self.domain.height)
             self.domain.place_agent(drone, (x, y))
         
-        # Initialize target
-        self.target_id = self.current_id  # Store target ID for use later
-        
-        target = Target(self.target_id, self, self.target_vis_radius)
+        # Initialize target        
+        target = Target(self.current_id, self, self.target_vis_radius, self.target_weapon_range, self.weapon_angular_range, self.fire_cooldown, self.omega_max)
         self.schedule.add(target)
         self.current_id += 1 # Increment current_id
+        
+        self.target = target # store target here as well
         
         # Put it in the middle for now
         x = self.domain.width / 2
@@ -145,6 +156,18 @@ class SwarmModel(mesa.Model):
         self.datacollector = mesa.DataCollector(
             agent_reporters={"Position": "pos"}
         )
+        return
+    
+    def get_num_drones(self):
+        agents = self.schedule.agents
+        n_drones = 0
+        for agent in agents:
+            if not isinstance(agent, Target): n_drones += 1
+        return n_drones
+    
+    def end(self):
+        self.running = False
+        return
         
     def step(self):
         """
@@ -152,6 +175,8 @@ class SwarmModel(mesa.Model):
         """
         self.datacollector.collect(self)  # Collect data
         self.schedule.step()  # Advance the scheduler
+        n_drones = self.get_num_drones()  # Count how many drones are left
+        if n_drones <= 0: self.running = False
 
 """
 Docstrings generated by ChatGPT.
