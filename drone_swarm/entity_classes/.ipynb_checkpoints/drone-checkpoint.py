@@ -75,9 +75,9 @@ class Drone(mesa.Agent):
         # Initialize steering weights
         self.weights  = np.array([ 
             1,     # alignment weight
-            1,     # cohesion weight
+            .7,    # cohesion weight
             1.05,  # separation weight
-            1,     # edge avoidance weight
+            1.2,     # edge avoidance weight
             1,     # target seeking weight
         ])
     
