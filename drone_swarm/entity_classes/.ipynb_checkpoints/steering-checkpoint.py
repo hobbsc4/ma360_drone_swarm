@@ -12,17 +12,19 @@ def seek_target(drone):
     Returns:
     - steering (numpy.ndarray): The calculated steering vector as a numpy array.
     """
+    
     steering = np.zeros(2)
     desired_velocity = np.zeros(2)
     
     # Accessing the target this way is faster than with a for loop
     target = drone.model.target
+    if drone.model.get_num_targets() <= 0:
+        return steering
     
     # If the target is out of range, don't steer towards/away from it
     distance = np.linalg.norm(np.array(target.pos) - np.array(drone.pos))
     if distance > drone.vis_range:
         return steering
-    
     
     direction = np.array(target.pos) - np.array(drone.pos)
     

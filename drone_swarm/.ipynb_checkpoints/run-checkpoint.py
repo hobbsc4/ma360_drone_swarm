@@ -13,20 +13,20 @@ from matplotlib.animation import FuncAnimation
 
 def main():
     model = SwarmModel(
-        n_drones = 50, # number of drones in the model
-        domain_width = 1000, # width of the spatial domain, in meters
-        domain_height = 1000, # height of the spatial domain, in meters
-        target_vis_radius = 1000,  # target's visibility range, in meters
-        target_weapon_range = 400, # effective weapon range of target, in meters
-        drone_vis_radius = 500, # drone's visibility radius, in meters
-        drone_weapon_radius = 15, # effective weapon radius of drone, in meters
-        drone_max_accuracy = .5, # probability between 0 and 1
-        drone_max_velocity = 25, # meters / second
-        drone_max_acceleration = 50, # meters / second^2
-        weapon_angular_range = 10 * np.pi / 180, # radians
-        fire_cooldown = 1, # seconds
-        omega_max = 25 * np.pi / 180, # max. angular velocity of target's weapon, in radians / second
-        dt = 1 # model time-step size, in seconds
+        n_drones               = 25,    # number of drones in the model
+        domain_width           = 1000,  # width of the spatial domain, in meters
+        domain_height          = 1000,  # height of the spatial domain, in meters
+        target_vis_radius      = 1000,  # target's visibility range, in meters
+        target_weapon_range    = 400,   # effective weapon range of target, in meters
+        drone_vis_radius       = 500,   # drone's visibility radius, in meters
+        drone_weapon_radius    = 100,   # effective weapon radius of drone, in meters
+        drone_max_accuracy     = .9,    # probability between 0 and 1
+        drone_max_velocity     = 27,    # meters / second
+        drone_max_acceleration = 20,                # meters / second^2
+        weapon_angular_range   = 10 * np.pi / 180,  # radians
+        fire_cooldown          = 2,                 # seconds
+        omega_max              = 45 * np.pi / 180,  # max. angular velocity of target's weapon, in radians / second
+        dt                     = 1                  # model time-step size, in seconds
     )
 
     target_x, target_y = model.target.pos
@@ -65,9 +65,6 @@ def main():
 
     # Define a function to update the plot
     def update_plot(ax):
-        # step the model
-        model.step()
-
         # clear the axis
         ax.clear()
 
@@ -102,16 +99,9 @@ def main():
 
     # Update plot in real-time
     while model.running:
-        update_plot(ax) # Update plot
+        model.step()
+        if model.get_num_targets() > 0: update_plot(ax) # Update plot
         plt.pause(0.01) # Pause for a short time
-
-    n_drones_left = model.get_num_drones()
-    if model.target.state == model.target.all_states[1]:
-        # if target is dead
-        print(f"Drones eliminated target.\nDRONES LEFT: {n_drones_left}.\nDRONES RETURNED: {model.n_drones_returned}")
-    else:
-        # if target is not dead
-        print(f"Target eliminated all active drones.\nDRONES LEFT: {n_drones_left}.\nDRONES RETURNED: {model.n_drones_returned}")
 
 if __name__ == "__main__":
     main()

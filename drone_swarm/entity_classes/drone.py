@@ -74,10 +74,10 @@ class Drone(mesa.Agent):
         
         # Initialize steering weights
         self.weights  = np.array([ 
-            1,     # alignment weight
-            .7,    # cohesion weight
-            1.05,  # separation weight
-            1.2,     # edge avoidance weight
+            1,    # alignment weight
+            1,    # cohesion weight
+            1,     # separation weight
+            1,     # edge avoidance weight
             1,     # target seeking weight
         ])
     
@@ -152,6 +152,7 @@ class Drone(mesa.Agent):
     
     def fire(self):
         if self.state == self.all_states[1]: return # do not fire if retreating
+        if self.model.get_num_targets() <= 0: return
         target = self.model.target
         xt, yt = target.pos
         
@@ -167,8 +168,8 @@ class Drone(mesa.Agent):
         target.get_hit(probability) # hit the target
         
         # Set drones to fly away from the target, towards the edge once they have fired
-        self.weights[3] *= -1 
-        self.weights[4] *= -1
+        # self.weights[3] *= -1 
+        # self.weights[4] *= -1
         self.state = self.all_states[1] # Set drones to "retreating" state
         return
                 

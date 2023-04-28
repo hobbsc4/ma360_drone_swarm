@@ -1,5 +1,7 @@
 import mesa
 import numpy as np
+import datetime
+import pytz
 
 class Target(mesa.Agent):
     
@@ -93,11 +95,20 @@ class Target(mesa.Agent):
         return
     
     def get_hit(self, probability):
+        # get the current UTC time
+        utc_now = datetime.datetime.now(tz=pytz.UTC)
+
+        # convert to a float timestamp
+        timestamp = int(utc_now.timestamp())
+
+        # print the result
+        np.random.seed(timestamp)
         random_number = np.random.rand()
         
         if random_number <= probability:
-            self.state = self.all_states[1] # set target state to "dead"
-            self.model.end()
+            self.model.domain.remove_agent(self)
+            self.model.schedule.remove(self)
+            self.model.current_id -= 1
         return
     
     def step(self):
