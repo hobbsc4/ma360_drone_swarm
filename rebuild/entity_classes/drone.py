@@ -4,7 +4,7 @@ import numpy as np
 from .steering import boids, avoid_edges, seek_target
 
 class Drone(mesa.Agent):
-    def __init__(self, unique_id, model):
+    def __init__(self, unique_id, model, weights):
         super().__init__(unique_id, model)
         
         # Drone states
@@ -18,13 +18,15 @@ class Drone(mesa.Agent):
         self.max_acceleration = self.model.options["drone_max_acceleration"]
         self.accuracy         = self.model.options["drone_accuracy"]
         
-        self.steering_weights = np.array([
-            1,  # alignment
-            1,  # cohesion
-            1,  # separation
-            1,  # edge avoidance
-            1,  # target seeking
-        ]);
+        #self.steering_weights = np.array([
+        #    1,  # alignment
+        #    1,  # cohesion
+        #    1,  # separation
+        #    1,  # edge avoidance
+        #    1,  # target seeking
+        #])
+
+        self.steering_weights = np.array(weights)
         
         # Initialize kinematic parameters
         initial_direction = np.random.uniform(-np.pi, 0)

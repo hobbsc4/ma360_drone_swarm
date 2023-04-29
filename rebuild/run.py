@@ -12,7 +12,7 @@ from IPython import display
 import matplotlib.pyplot as plt
 
 def main():
-    model = SwarmModel()
+    model = SwarmModel([0.5,0.5,2,0.5,0.5], 90)
 
     # create a figure and axis objects
     fig, ax = plt.subplots()
@@ -53,6 +53,7 @@ def main():
         for drone in drones:
             drone_x, drone_y = drone.pos
             ax.plot(drone_x, drone_y, 'bo')
+        plt.title(model.schedule.time)
 
     # Update plot in real-time
     while (
@@ -61,6 +62,8 @@ def main():
             model.current_num_targets > 0  # end if drones take out targets
             and
             model.current_num_armed_drones > 0  # end if all drones have spent their ammunition
+            and
+            model.schedule.time < 400
         ):
         model.step()
         update_plot(ax)

@@ -6,8 +6,9 @@ from entity_classes.target import Target
 from config import options
 
 class SwarmModel(mesa.Model):
-    def __init__(self, num_drones=options["num_drones"]):
-        
+    def __init__(self, weights, num_drones=options["num_drones"]):
+
+
         # Initialize options dict. as parameter of the model
         self.options = options
         
@@ -48,7 +49,7 @@ class SwarmModel(mesa.Model):
         
         # Initialize Drones
         for i in range(self.initial_num_drones):
-            drone            = Drone(self.current_id, self)
+            drone            = Drone(self.current_id, self, weights)
             self.current_id += 1
             self.schedule.add(drone)
             
@@ -83,14 +84,16 @@ class SwarmModel(mesa.Model):
         """
         self.schedule.step()
     
-    def run(self, num_drones=options["num_drones"]):
-        self.__init__(num_drones)
+    def run(self, weights, num_drones=options["num_drones"]):
+        self.__init__(weights, num_drones)
         while (
             self.current_num_drones > 0  # end if targets take out drones
             and
             self.current_num_targets > 0  # end if drones take out targets
             and
             self.current_num_armed_drones > 0  # end if all drones have spent their ammunition
+            and
+            self.schedule.time < 400
         ):
             self.step()
             
