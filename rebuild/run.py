@@ -12,7 +12,7 @@ from IPython import display
 import matplotlib.pyplot as plt
 
 def main():
-    model = SwarmModel([0.5,0.5,2,0.5,0.5], 90)
+    model = SwarmModel([0.5,2,2,0.5,0.5], 100)
 
     # create a figure and axis objects
     fig, ax = plt.subplots()

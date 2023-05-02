@@ -23,8 +23,8 @@ def saveplot(drone_range, returns, params):
     plt.title("Utility vs. Number of Drones")
     plt.xlabel("Number of Drones")
     plt.ylabel("Utitlity (USD)")
-    plt.savefig("returns/plots/" + params + " plot.png")
-    plt.clf()
+    #plt.savefig("returns/plots/" + params + " plot.png")
+    #plt.clf()
 
 def savevalues(drone_range, returns, params):
     np.savetxt("returns/values/" + params + " values.txt", (drone_range, returns), fmt="%d")
@@ -36,7 +36,7 @@ def main():
 
     for i in (list(param_range)[18:]):
         objvs = calc(n_drones, num_trials, i)
-        saveplot(n_drones, objvs, str(i))
+        #saveplot(n_drones, objvs, str(i))
         savevalues(n_drones, objvs, str(i))
 
 
